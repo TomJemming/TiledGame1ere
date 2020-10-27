@@ -4,9 +4,9 @@ import os
 
 HEIGHT = 1080
 WIDTH = 1920
-FPS = 60
+FPS = 240
 
-SPEED = 16
+SPEED = 8
 
 GRID_SIZE = 32
 GRID_HEIGHT = HEIGHT/GRID_SIZE
@@ -69,10 +69,10 @@ class Player(pg.sprite.Sprite):
 
 
 class Wall(pg.sprite.Sprite):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, color):
         pg.sprite.Sprite.__init__(self)
         self.image = pg.Surface((GRID_SIZE, GRID_SIZE))
-        self.image.fill(BLUE)
+        self.image.fill(color)
         self.x = x
         self.y = y
         self.rect = self.image.get_rect()
@@ -91,8 +91,14 @@ class Camera:
 
     def update(self, player):
         x = -player.rect.x + int(WIDTH/2)
-        y = -player.rect.y + int(HEIGHT/2) -28
+        y = -player.rect.y + int(HEIGHT/2) - 28
 
+        #print(f"g_map_width: {g.map_width}, playerrecty: {player.rect.y/32}, x: {x/32}, y:{y/32}")
+
+        x = min(-1*GRID_SIZE, x)
+        y = min(-1*GRID_SIZE, y)
+        x = max(-46*GRID_SIZE, x)
+        y = max(-74*GRID_SIZE, y)
         self.camera = pg.Rect(x, y, self.width, self.height)
 
 
@@ -114,6 +120,7 @@ class Game:
 
     def new(self):
         self.all_sprites = pg.sprite.Group()
+        self.player_list = pg.sprite.Group()
         self.all_walls = []
         self.load()
         self.create_map()
@@ -141,13 +148,17 @@ class Game:
         for posy, line in enumerate(self.map):
             for posx, symbol in enumerate(line):
                 if symbol == "W":
-                    w = Wall(self, x=posx, y=posy)
+                    w = Wall(self, x=posx, y=posy, color=BLUE)
                     self.all_sprites.add(w)
                     self.all_walls.append((posx, posy))
 
+                if symbol == "G":
+                    g = Wall(self, x=posx, y=posy, color=DARKGREY)
+                    self.all_sprites.add(g)
+
                 if symbol == "P":
                     self.player = Player(self, posx, posy)
-                    self.all_sprites.add(self.player)
+                    self.player_list.add(self.player)
 
     def events(self):
         for event in pg.event.get():
@@ -175,14 +186,16 @@ class Game:
 
     def draw(self):
         self.screen.fill(BLACK)
-        self.grid()
+        #self.grid()
         for sprite in self.all_sprites:
             self.screen.blit(sprite.image, self.camera.get_offset(sprite))
-
+        for sprite in self.player_list:
+            self.screen.blit(sprite.image, self.camera.get_offset(sprite))
         pg.display.flip()
 
     def update(self):
         self.all_sprites.update()
+        self.player_list.update()
         self.camera.update(self.player)
 
         self.clock.tick(FPS)
