@@ -6,11 +6,11 @@ HEIGHT = 1080
 WIDTH = 1920
 FPS = 240
 
-SPEED = 8
-
-GRID_SIZE = 32
+GRID_SIZE = 64
 GRID_HEIGHT = HEIGHT/GRID_SIZE
 GRID_WIDTH = WIDTH/GRID_SIZE
+
+SPEED = GRID_SIZE/4
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -65,7 +65,7 @@ class Player(pg.sprite.Sprite):
             self.R = random.randrange(0,255)
             self.G = random.randrange(0,255)
             self.B = random.randrange(0,255)
-        self.image.fill((self.R, self.G ,self.B))
+        self.image.fill((self.R, self.G, self.B))
 
 
 class Wall(pg.sprite.Sprite):
@@ -97,8 +97,8 @@ class Camera:
 
         x = min(-1*GRID_SIZE, x)
         y = min(-1*GRID_SIZE, y)
-        x = max(-46*GRID_SIZE, x)
-        y = max(-74*GRID_SIZE, y)
+        x = max(-76*GRID_SIZE, x)
+        y = max(-91*GRID_SIZE, y)
         self.camera = pg.Rect(x, y, self.width, self.height)
 
 
