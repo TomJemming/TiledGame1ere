@@ -10,7 +10,7 @@ GRID_SIZE = 32
 GRID_HEIGHT = HEIGHT/GRID_SIZE
 GRID_WIDTH = WIDTH/GRID_SIZE
 
-SPEED = GRID_SIZE/4
+SPEED = GRID_SIZE/8
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -75,14 +75,13 @@ class Player(pg.sprite.Sprite):
 class Wall(pg.sprite.Sprite):
     def __init__(self, game, x, y, color):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.Surface((GRID_SIZE, GRID_SIZE))
-        self.image.fill(color)
+        #self.texture = color
         self.x = x
         self.y = y
+        self.image = color
         self.rect = self.image.get_rect()
         self.rect.x = self.x * GRID_SIZE
         self.rect.y = self.y * GRID_SIZE
-
 
 
 class Npc(pg.sprite.Sprite):
@@ -141,7 +140,6 @@ class Game:
         self.screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
         pg.display.set_caption("Allo.")
         self.clock = pg.time.Clock()
-        #pg.key.set_repeat(1, 200)
         self.running = True
 
     def load(self):
@@ -150,6 +148,10 @@ class Game:
         with open(os.path.join(g_location, "map.txt"), "rt") as file:
             for line in file:
                 self.map.append(line)
+        self.all_textures = {}
+        self.all_textures_hitbox = {}
+        self.all_textures_hitbox["W"] = pg.image.load(os.path.join("images/tiles.png"))
+        self.all_textures["G"] = pg.image.load(os.path.join("images/wooden_tiles.png"))
 
     def new(self):
         self.all_sprites = pg.sprite.Group()
@@ -181,14 +183,16 @@ class Game:
 
         for posy, line in enumerate(self.map):
             for posx, symbol in enumerate(line):
-                if symbol == "W":
-                    w = Wall(self, x=posx, y=posy, color=BLUE)
-                    self.all_sprites.add(w)
-                    self.all_walls.append((posx, posy))
+                if symbol.islower():
+                    for item in self.all_textures:
+                        w = Wall(self, x=posx, y=posy, color=self.all_textures[item])
+                        self.all_sprites.add(w)
+                        self.all_walls.append((posx, posy))
 
-                if symbol == "G":
-                    g = Wall(self, x=posx, y=posy, color=DARKGREY)
-                    self.all_sprites.add(g)
+                if symbol.isupper():
+                    for item in self.all_textures_hitbox:
+                        g = Wall(self, x=posx, y=posy, color=self.all_textures_hitbox[item])
+                        self.all_sprites.add(g)
 
                 if symbol == "T":
                     t = Npc(self, x=posx, y=posy)
