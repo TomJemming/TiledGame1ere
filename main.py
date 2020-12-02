@@ -1,6 +1,7 @@
 import pygame as pg
 import random
 import os
+import pong
 
 HEIGHT = 1080
 WIDTH = 1920
@@ -10,7 +11,7 @@ GRID_SIZE = 32
 GRID_HEIGHT = HEIGHT/GRID_SIZE
 GRID_WIDTH = WIDTH/GRID_SIZE
 
-SPEED = GRID_SIZE/8
+SPEED = GRID_SIZE/2
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -18,6 +19,8 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 DARKGREY = (80, 80, 80)
+
+font = pg.font.SysFont("comicsansms", 72)
 
 
 class Player(pg.sprite.Sprite):
@@ -61,21 +64,20 @@ class Player(pg.sprite.Sprite):
     def update(self):
         if self.rect.x != self.x * GRID_SIZE:
             self.rect.x += self.mx * SPEED
-            self.R = random.randrange(0,255)
-            self.G = random.randrange(0,255)
-            self.B = random.randrange(0,255)
+            self.R = random.randrange(0, 255)
+            self.G = random.randrange(0, 255)
+            self.B = random.randrange(0, 255)
         if self.rect.y != self.y * GRID_SIZE:
             self.rect.y += self.my * SPEED
-            self.R = random.randrange(0,255)
-            self.G = random.randrange(0,255)
-            self.B = random.randrange(0,255)
+            self.R = random.randrange(0, 255)
+            self.G = random.randrange(0, 255)
+            self.B = random.randrange(0, 255)
         self.image.fill((self.R, self.G, self.B))
 
 
 class Wall(pg.sprite.Sprite):
     def __init__(self, game, x, y, color):
         pg.sprite.Sprite.__init__(self)
-        #self.texture = color
         self.x = x
         self.y = y
         self.image = color
@@ -106,10 +108,7 @@ class Npc(pg.sprite.Sprite):
                         self.do_smth()
 
     def do_smth(self):
-        self.R = random.randrange(0,255)
-        self.G = random.randrange(0,255)
-        self.B = random.randrange(0,255)
-        self.image.fill((self.R, self.G, self.B))
+        pong.start()
 
 
 class Camera:
@@ -118,8 +117,8 @@ class Camera:
         self.width = width
         self.height = height
 
-    def get_offset(self, object):
-        return object.rect.move(self.camera.topleft)
+    def get_offset(self, obj):
+        return obj.rect.move(self.camera.topleft)
 
     def update(self, player):
         x = -player.rect.x + int(WIDTH/2)
@@ -127,10 +126,6 @@ class Camera:
 
         #print(f"g_map_width: {g.map_width}, playerrecty: {player.rect.y/32}, x: {x/32}, y:{y/32}")
 
-        x = min(-1*GRID_SIZE, x)
-        y = min(-1*GRID_SIZE, y)
-        x = max(-76*GRID_SIZE, x)
-        y = max(-91*GRID_SIZE, y)
         self.camera = pg.Rect(x, y, self.width, self.height)
 
 
@@ -150,8 +145,12 @@ class Game:
                 self.map.append(line)
         self.all_textures = {}
         self.all_textures_hitbox = {}
+        self.all_textures_hitbox["D"] = pg.image.load(os.path.join("images/tiles.png"))
         self.all_textures_hitbox["W"] = pg.image.load(os.path.join("images/tiles.png"))
-        self.all_textures["G"] = pg.image.load(os.path.join("images/wooden_tiles.png"))
+        self.all_textures["f"] = pg.image.load(os.path.join("images/wooden_tiles.png"))
+        self.all_textures["l"] = pg.image.load(os.path.join("images/wooden_tiles.png"))
+        self.all_textures["g"] = pg.image.load(os.path.join("images/wooden_tiles.png"))
+        self.all_textures["p"] = pg.image.load(os.path.join("images/wooden_tiles.png"))
 
     def new(self):
         self.all_sprites = pg.sprite.Group()
@@ -185,14 +184,16 @@ class Game:
             for posx, symbol in enumerate(line):
                 if symbol.islower():
                     for item in self.all_textures:
-                        w = Wall(self, x=posx, y=posy, color=self.all_textures[item])
-                        self.all_sprites.add(w)
-                        self.all_walls.append((posx, posy))
+                        if item == symbol:
+                            w = Wall(self, x=posx, y=posy, color=self.all_textures[item])
+                            self.all_sprites.add(w)
 
                 if symbol.isupper():
                     for item in self.all_textures_hitbox:
-                        g = Wall(self, x=posx, y=posy, color=self.all_textures_hitbox[item])
-                        self.all_sprites.add(g)
+                        if item == symbol:
+                            g = Wall(self, x=posx, y=posy, color=self.all_textures_hitbox[item])
+                            self.all_sprites.add(g)
+                            self.all_walls.append((posx, posy))
 
                 if symbol == "T":
                     t = Npc(self, x=posx, y=posy)
@@ -200,9 +201,12 @@ class Game:
                     self.all_walls.append((posx, posy))
                     self.all_npcs.append(t)
 
-                if symbol == "P":
+                if symbol == "p":
                     self.player = Player(self, posx, posy)
                     self.player_list.add(self.player)
+
+                if symbol == "+":
+                    self.all_walls.append((posx, posy))
 
     def events(self):
         for event in pg.event.get():
@@ -237,7 +241,13 @@ class Game:
             self.screen.blit(sprite.image, self.camera.get_offset(sprite))
         for sprite in self.player_list:
             self.screen.blit(sprite.image, self.camera.get_offset(sprite))
+        self.text = font.render("Hello!", True, (255, 255, 255))
+        self.screen.blit(self.text, (g.player.x+GRID_SIZE, g.player.y*GRID_SIZE))
         pg.display.flip()
+
+    def write_text(self):
+        self.text = font.render("Hello!", True, (255, 255, 255))
+        self.screen.blit(self.text, (g.player.x+GRID_SIZE, g.player.y*GRID_SIZE))
 
     def update(self):
         self.all_sprites.update()
